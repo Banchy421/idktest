@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subway Surfers 3D - Ultimate Runner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            overflow: hidden;
+            background: #000;
+            user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #game-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* UI Overlay */
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* HUD */
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+        }
+
+        .score-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .score-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+        }
+
+        .score-value {
+            font-family: 'Bangers', cursive;
+            font-size: 48px;
+            color: #fff;
+            text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
+            letter-spacing: 2px;
+        }
+
+        .coins-container {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(245, 87, 108, 0.4);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .coin-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.5);
+            animation: coinSpin 2s ease-in-out infinite;
+        }
+
+        @keyframes coinSpin {
+            0%, 100% { transform: scaleX(1); }
+            50% { transform: scaleX(0.6); }
+        }
+
+        .coin-count {
+            font-family: 'Bangers', cursive;
+            font-size: 36px;
+            color: #fff;
+            text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+        }
+
+        .multiplier {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-family: 'Bangers', cursive;
+            font-size: 24px;
+            color: #fff;
+            text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* Menus */
+        .menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+            padding: 40px 60px;
+            border-radius: 30px;
+            text-align: center;
+            pointer-events: auto;
+            backdrop-filter: blur(20px);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .menu.hidden {
+            display: none;
+        }
+
+        .menu-title {
+            font-family: 'Bangers', cursive;
+            font-size: 64px;
+            color: #fff;
+            text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .menu-subtitle {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 18px 30px;
+            margin: 10px 0;
+            font-family: 'Bangers', cursive;
+            font-size: 28px;
+            color: #fff;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 8px 20px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            box-shadow: 0 8px 20px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-upgrade {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            box-shadow: 0 8px 20px rgba(67, 233, 123, 0.4);
+            font-size: 22px;
+            padding: 15px 25px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-family: 'Bangers', cursive;
+            font-size: 32px;
+            color: #fff;
+        }
+
+        /* Upgrade Panel */
+        .upgrade-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 20px 30px;
+            border-radius: 20px;
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .upgrade-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 80px;
+        }
+
+        .upgrade-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .upgrade-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .upgrade-name {
+            font-size: 10px;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .upgrade-level {
+            font-size: 12px;
+            color: #43e97b;
+            font-weight: bold;
+        }
+
+        /* Controls hint */
+        .controls-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .key {
+            display: inline-block;
+            padding: 3px 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            margin: 0 2px;
+            font-weight: bold;
+        }
+
+        /* Power-up indicator */
+        .powerup-indicator {
+            position: absolute;
+            top: 150px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .powerup-item {
+            padding: 10px 15px;
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            border-radius: 10px;
+            color: #fff;
+            font-weight: bold;
+            font-size: 14px;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 15px rgba(250, 112, 154, 0.4);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Combo counter */
+        .combo-counter {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Bangers', cursive;
+            font-size: 72px;
+            color: #ffd700;
+            text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .combo-counter.active {
+            opacity: 1;
+            animation: comboPop 0.5s ease;
+        }
+
+        @keyframes comboPop {
+            0% { transform: translate(-50%, -50%) scale(0.5); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* Character select */
+        .character-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .character-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .character-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .character-card.selected {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .character-avatar {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .character-name {
+            font-size: 14px;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .character-unlocked {
+            font-size: 10px;
+            color: #43e97b;
+        }
+
+        .character-locked {
+            font-size: 10px;
+            color: #f5576c;
+        }
+    </style>
+  <script type="module" crossorigin src="/assets/index-DNcUjJ9N.js"></script>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        
+        <div class="ui-overlay">
+            <!-- HUD -->
+            <div class="hud" id="hud">
+                <div class="score-container">
+                    <div class="score-label">Score</div>
+                    <div class="score-value" id="score">0</div>
+                </div>
+                <div class="coins-container">
+                    <div class="coin-icon">🪙</div>
+                    <div class="coin-count" id="coins">0</div>
+                </div>
+            </div>
+            
+            <div class="multiplier" id="multiplier">x1.0</div>
+            
+            <div class="powerup-indicator" id="powerups"></div>
+            
+            <div class="combo-counter" id="combo">COMBO x0!</div>
+            
+            <div class="controls-hint">
+                <div><span class="key">←</span> <span class="key">→</span> Move</div>
+                <div><span class="key">↑</span> Jump | <span class="key">↓</span> Roll</div>
+                <div><span class="key">Space</span> Jump</div>
+            </div>
+            
+            <div class="upgrade-panel" id="upgradePanel">
+                <div class="upgrade-item" data-upgrade="speed">
+                    <div class="upgrade-icon">⚡</div>
+                    <div class="upgrade-name">Speed</div>
+                    <div class="upgrade-level" id="speedLevel">Lv.1</div>
+                </div>
+                <div class="upgrade-item" data-upgrade="jump">
+                    <div class="upgrade-icon">🦘</div>
+                    <div class="upgrade-name">Jump</div>
+                    <div class="upgrade-level" id="jumpLevel">Lv.1</div>
+                </div>
+                <div class="upgrade-item" data-upgrade="magnet">
+                    <div class="upgrade-icon">🧲</div>
+                    <div class="upgrade-name">Magnet</div>
+                    <div class="upgrade-level" id="magnetLevel">Lv.0</div>
+                </div>
+                <div class="upgrade-item" data-upgrade="shield">
+                    <div class="upgrade-icon">🛡️</div>
+                    <div class="upgrade-name">Shield</div>
+                    <div class="upgrade-level" id="shieldLevel">Lv.0</div>
+                </div>
+            </div>
+
+            <!-- Start Menu -->
+            <div class="menu" id="startMenu">
+                <h1 class="menu-title">SUBWAY<br>SURFERS 3D</h1>
+                <p class="menu-subtitle">The Ultimate Endless Runner Experience</p>
+                
+                <div class="character-grid" id="characterSelect">
+                    <div class="character-card selected" data-character="runner">
+                        <div class="character-avatar">🏃</div>
+                        <div class="character-name">Runner</div>
+                        <div class="character-unlocked">Unlocked</div>
+                    </div>
+                    <div class="character-card" data-character="fox">
+                        <div class="character-avatar">🦊</div>
+                        <div class="character-name">Fox</div>
+                        <div class="character-locked">500 coins</div>
+                    </div>
+                    <div class="character-card" data-character="robot">
+                        <div class="character-avatar">🤖</div>
+                        <div class="character-name">Robot</div>
+                        <div class="character-locked">1000 coins</div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" id="startBtn">🎮 START RUN</button>
+                <button class="btn btn-secondary" id="shopBtn">🛒 UPGRADES</button>
+            </div>
+
+            <!-- Shop Menu -->
+            <div class="menu hidden" id="shopMenu">
+                <h1 class="menu-title">UPGRADE SHOP</h1>
+                <p class="menu-subtitle">Spend your coins to get stronger!</p>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Total Coins</div>
+                        <div class="stat-value" id="totalCoins">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Best Score</div>
+                        <div class="stat-value" id="bestScore">0</div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-upgrade" id="buySpeed">⚡ Speed Boost (100🪙)</button>
+                <button class="btn btn-upgrade" id="buyJump">🦘 Super Jump (150🪙)</button>
+                <button class="btn btn-upgrade" id="buyMagnet">🧲 Coin Magnet (200🪙)</button>
+                <button class="btn btn-upgrade" id="buyShield">🛡️ Shield (250🪙)</button>
+                <button class="btn btn-upgrade" id="buyCharacter">🦊 Unlock Fox (500🪙)</button>
+                
+                <button class="btn" id="backBtn">↩️ BACK</button>
+            </div>
+
+            <!-- Game Over Menu -->
+            <div class="menu hidden" id="gameOverMenu">
+                <h1 class="menu-title">GAME OVER</h1>
+                <p class="menu-subtitle">Better luck next time!</p>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Score</div>
+                        <div class="stat-value" id="finalScore">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Coins</div>
+                        <div class="stat-value" id="finalCoins">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Distance</div>
+                        <div class="stat-value" id="finalDistance">0m</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Combo</div>
+                        <div class="stat-value" id="finalCombo">x0</div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" id="retryBtn">🔄 TRY AGAIN</button>
+                <button class="btn btn-secondary" id="menuBtn">🏠 MAIN MENU</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
